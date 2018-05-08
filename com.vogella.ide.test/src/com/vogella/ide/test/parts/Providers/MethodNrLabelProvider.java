@@ -1,7 +1,5 @@
 package com.vogella.ide.test.parts.Providers;
 
-import java.io.File;
-
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.JFaceResources;
@@ -15,13 +13,13 @@ import org.eclipse.swt.graphics.Image;
 
 import com.vogella.ide.test.parts.analyze.Calculator;
 
-public class LineNrLabelProvider extends CellLabelProvider implements IStyledLabelProvider {
+public class MethodNrLabelProvider extends CellLabelProvider implements IStyledLabelProvider {
 	
 	private ImageDescriptor image;
 	private ResourceManager resourceManager;
 	private Calculator calculator;
 	
-	public LineNrLabelProvider(ImageDescriptor image) {
+	public MethodNrLabelProvider(ImageDescriptor image) {
 		this.image = image;
 		calculator = new Calculator();
 	}
@@ -30,7 +28,7 @@ public class LineNrLabelProvider extends CellLabelProvider implements IStyledLab
 	public StyledString getStyledText(Object element) {
 	    StyledString styledString = new StyledString("Default_Text");
 		try {
-			styledString = new StyledString(String.valueOf(calculator.numberOfLines(element)));
+			styledString = new StyledString(String.valueOf(calculator.numberOfMethods(element)));
 		} catch (JavaModelException e) {
 			styledString = new StyledString("NaN");
 			e.printStackTrace();
@@ -41,7 +39,6 @@ public class LineNrLabelProvider extends CellLabelProvider implements IStyledLab
     @Override
     public Image getImage(Object element) {
         return getResourceManager().createImage(image);
-        //return super.getImage(element);
     }
 
     @Override
@@ -60,14 +57,8 @@ public class LineNrLabelProvider extends CellLabelProvider implements IStyledLab
         return resourceManager;
     }
 
-    private String getFileName(File file) {
-        String name = file.getName();
-        return name.isEmpty() ? file.getPath() : name;
-    }
-
 	@Override
 	public void update(ViewerCell cell) {
-		// TODO Auto-generated method stub
 		
 	}
 

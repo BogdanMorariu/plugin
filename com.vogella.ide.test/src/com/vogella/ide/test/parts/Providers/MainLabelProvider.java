@@ -3,6 +3,7 @@ package com.vogella.ide.test.parts.Providers;
 import java.io.File;
 
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.JFaceResources;
@@ -17,11 +18,15 @@ import org.eclipse.swt.graphics.Image;
 
 public class MainLabelProvider extends CellLabelProvider implements IStyledLabelProvider {
 	
-	private ImageDescriptor image;
+	private ImageDescriptor projectImage;
+	private ImageDescriptor packageImage;
+	private ImageDescriptor classImage;
 	private ResourceManager resourceManager;
 	
-	public MainLabelProvider(ImageDescriptor image) {
-		this.image = image;
+	public MainLabelProvider(ImageDescriptor projectImage,ImageDescriptor packageImage,ImageDescriptor classImage) {
+		this.projectImage = projectImage;
+		this.packageImage = packageImage;
+		this.classImage = classImage;
 	}
 
 	@Override
@@ -29,20 +34,40 @@ public class MainLabelProvider extends CellLabelProvider implements IStyledLabel
 		String nume="class";
 		if(element instanceof IPackageFragment) {
             IPackageFragment pack = (IPackageFragment)element;
-            StyledString styledString = new StyledString(pack.toString());
+            StyledString styledString = new StyledString(pack.toString().split(" ")[0]);
             return styledString;
         }else if(element instanceof ICompilationUnit) {
         	ICompilationUnit unit = (ICompilationUnit)element;
-        	StyledString styledString = new StyledString(unit.toString());
+        	StyledString styledString = new StyledString(trimName(unit.toString()));
             return styledString;
         }
         return new StyledString(nume);
 	}
 	
+	private String trimName(String name) {
+		String result = "";
+		int brackets = 0;
+		for(int i=0;i<name.length();i++) {
+			if(name.charAt(i)=='[')
+				brackets++;
+			if(brackets==0)
+				result+=name.charAt(i);
+			if(name.charAt(i)==']')
+				brackets--;
+		}
+		return result;
+	}
+	
     @Override
     public Image getImage(Object element) {
-        return getResourceManager().createImage(image);
-        //return super.getImage(element);
+    	Image result = null;
+    	if(element instanceof IJavaProject)
+    		result = getResourceManager().createImage(projectImage);
+    	if(element instanceof IPackageFragment)
+    		result = getResourceManager().createImage(packageImage);
+    	if(element instanceof ICompilationUnit)
+    		result = getResourceManager().createImage(classImage);
+        return result;
     }
 
     @Override
@@ -61,14 +86,8 @@ public class MainLabelProvider extends CellLabelProvider implements IStyledLabel
         return resourceManager;
     }
 
-    private String getFileName(File file) {
-        String name = file.getName();
-        return name.isEmpty() ? file.getPath() : name;
-    }
-
 	@Override
 	public void update(ViewerCell cell) {
-		// TODO Auto-generated method stub
 		
 	}
 

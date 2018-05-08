@@ -54,8 +54,11 @@ import org.eclipse.swt.widgets.TreeItem;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkUtil;
 
+import com.vogella.ide.test.parts.Providers.LineNrLabelProvider;
 import com.vogella.ide.test.parts.Providers.MainLabelProvider;
+import com.vogella.ide.test.parts.Providers.MethodNrLabelProvider;
 import com.vogella.ide.test.parts.Providers.MyTreeContentProvider;
+import com.vogella.ide.test.parts.analyze.Calculator;
 
 public class PartEclipse4x {
 	private ResourceManager resourceManager;
@@ -63,6 +66,9 @@ public class PartEclipse4x {
 
 	@PostConstruct
 	public void createPartControl(Composite parent) throws CoreException {
+		
+		Calculator calculator = new Calculator();
+		
 		resourceManager = new LocalResourceManager(JFaceResources.getResources(), parent);
 		viewer = new TreeViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
 		viewer.setContentProvider(new MyTreeContentProvider());
@@ -73,16 +79,20 @@ public class PartEclipse4x {
 
 		// Column setup
 		TreeViewerColumn mainColumn = new TreeViewerColumn(viewer, SWT.None);
-		mainColumn.getColumn().setWidth(300);
+		mainColumn.getColumn().setWidth(400);
 		mainColumn.getColumn().setText("Classes");
-		mainColumn.setLabelProvider(
-                new DelegatingStyledCellLabelProvider(
-                        new MainLabelProvider(createImageDescriptor())));
+		mainColumn.setLabelProvider(new DelegatingStyledCellLabelProvider(new MainLabelProvider(
+				createImageDescriptor("icons/sample.png"),createImageDescriptor("icons/package.png"),createImageDescriptor("icons/class.png"))));
 		
-		TreeViewerColumn metricsColumn = new TreeViewerColumn(viewer, SWT.None);
-		metricsColumn.getColumn().setWidth(300);
-		metricsColumn.getColumn().setText("Nr. of Lines");
-		metricsColumn.setLabelProvider(new MainLabelProvider(createImageDescriptor()));
+		TreeViewerColumn metricsColumn1 = new TreeViewerColumn(viewer, SWT.None);
+		metricsColumn1.getColumn().setWidth(150);
+		metricsColumn1.getColumn().setText("Nr. of Lines");
+		metricsColumn1.setLabelProvider(new DelegatingStyledCellLabelProvider(new LineNrLabelProvider(createImageDescriptor("icons/node.png"))));
+		
+		TreeViewerColumn metricsColumn2 = new TreeViewerColumn(viewer, SWT.None);
+		metricsColumn2.getColumn().setWidth(150);
+		metricsColumn2.getColumn().setText("Nr. of Methods");
+		metricsColumn2.setLabelProvider(new DelegatingStyledCellLabelProvider(new MethodNrLabelProvider(createImageDescriptor("icons/node.png"))));
 		
 
 		// Font
@@ -97,17 +107,6 @@ public class PartEclipse4x {
 					item.setExpanded(!item.getExpanded());
 					viewer.refresh();
 				}
-			}
-		});
-
-		viewer.addDoubleClickListener(new IDoubleClickListener() {
-
-			@Override
-			public void doubleClick(DoubleClickEvent event) {
-				TreeViewer view = (TreeViewer) event.getViewer();
-				IStructuredSelection thisSelection = (IStructuredSelection) event.getSelection();
-				Object selectedNode = thisSelection.getFirstElement();
-				view.setExpandedState(selectedNode, !view.getExpandedState(selectedNode));
 			}
 		});
 
@@ -133,7 +132,7 @@ public class PartEclipse4x {
 		Integer linesInProject = 0;
 		for (IProject project : projects) {
 			if (project.isOpen()) {
-				analyzeProject(project, classes, methods, linesInProject);
+				calculator.analyzeProject(project, classes, methods, linesInProject);
 			}
 		}
 		
@@ -149,12 +148,6 @@ public class PartEclipse4x {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-
-		//viewer.setInput(resourceNames.toArray());
-	
-		// viewer.setInput(File.listRoots());
-		// ClassLoader cl = ClassLoader.getSystemClassLoader();
-		// viewer.setInput(cl.getDefinedPackages());
 		GridLayoutFactory.fillDefaults().generateLayout(parent);
 	}
 
@@ -163,9 +156,9 @@ public class PartEclipse4x {
 		viewer.getControl().setFocus();
 	}
 
-	private ImageDescriptor createImageDescriptor() {
+	private ImageDescriptor createImageDescriptor(String path) {
 		Bundle bundle = FrameworkUtil.getBundle(MainLabelProvider.class);
-		URL url = FileLocator.find(bundle, new Path("icons/package.png"), null);
+		URL url = FileLocator.find(bundle, new Path(path), null);
 		return ImageDescriptor.createFromURL(url);
 	}
 
@@ -183,26 +176,5 @@ public class PartEclipse4x {
 		}
 	}
 	
-	void analyzeProject(IProject project, List<String> classes, List<String> methods, Integer linesInProject) throws JavaModelException {
-		IJavaProject javaProject = JavaCore.create(project);
-		IPackageFragment[] packages = javaProject.getPackageFragments();
-        for (IPackageFragment mypackage : packages) {
-            if (mypackage.getKind() == IPackageFragmentRoot.K_SOURCE) {
-            	for (ICompilationUnit unit : mypackage.getCompilationUnits()) {
-                    String clas = unit.getElementName();
-                    Document doc = new Document(unit.getSource());
-                    linesInProject += doc.getNumberOfLines();
-                    clas += "(" + doc.getNumberOfLines() + ")";
-                    classes.add(clas);
-                    IType[] allTypes = unit.getAllTypes();
-                    for (IType type : allTypes) {
-                    	IMethod[] methodz = type.getMethods();
-                        for (IMethod method : methodz) {
-                        	methods.add(method.getElementName());
-                        }
-                    } 
-                }
-            }
-        }
-	}
+	
 }
